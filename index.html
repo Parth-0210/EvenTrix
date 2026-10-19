@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EvenTrix — Multi-College Campus Event Network & Real-Time Projects</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <!-- React 18, PropTypes, ReactDOM 18, and Recharts 2.12.7 UMD for Dean's Visual Dashboard -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js"></script>
+</head>
+<body class="dark-theme">
+
+  <!-- Production Website Navigation Header -->
+  <header class="site-header">
+    <div class="header-inner container">
+      <div class="brand-group" onclick="showTab('explore')">
+        <div class="brand-logo">
+          <img src="logo.png" alt="EvenTrix Logo" class="brand-logo-img">
+        </div>
+        <div class="brand-text">
+          <div class="brand-name">EvenTrix</div>
+          <div class="brand-sub">Delhi-NCR Multi-Campus Portal</div>
+        </div>
+      </div>
+
+      <!-- Desktop Dynamic Navigation Ribbon (Populated exclusively by authenticated role) -->
+      <nav class="nav-links" id="mainNavRibbon">
+        <button class="nav-link active" onclick="showTab('explore')" id="nav-explore">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          Explore Events
+        </button>
+        <button class="nav-link" onclick="showTab('passes')" id="nav-passes">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+          My Passes <span id="passCounterBadge" class="counter-badge">0</span>
+        </button>
+        <button class="nav-link" onclick="showTab('squads')" id="nav-squads">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Find Squad
+        </button>
+        <button class="nav-link" onclick="showTab('projects')" id="nav-projects">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          Live Projects
+        </button>
+        <button class="nav-link" onclick="showTab('colleges')" id="nav-colleges">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+          Campuses
+        </button>
+      </nav>
+
+      <div class="header-right">
+        <!-- Real-Time Notification Bell Dropdown -->
+        <div class="header-notification-wrap">
+          <button class="btn-notification-bell" onclick="toggleNotificationDropdown()" title="Real-Time Registration Alerts">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            <span class="bell-count" id="headerNotifCount">0</span>
+          </button>
+          <div class="notification-dropdown" id="notificationDropdown" style="display: none;">
+            <div class="notif-dropdown-header">
+              <span>🔔 Real-Time Applicant Stream</span>
+              <button class="clear-notifs-btn" onclick="clearNotifications()">Clear</button>
+            </div>
+            <div class="notif-list" id="headerNotifList">
+              <!-- Rendered via JS -->
+            </div>
+            <div class="notif-dropdown-footer" onclick="handleOrganizerTabClick(); toggleNotificationDropdown();">
+              View Full Telemetry →
+            </div>
+          </div>
+        </div>
+
+        <!-- Active User Profile Pill (Opens credential details) -->
+        <div id="headerUserChip" class="header-user-chip" onclick="openAuthModal()" title="View credentials or switch role">
+          <span class="user-avatar-badge" id="headerUserAvatar">🎓</span>
+          <div class="user-chip-text">
+            <span class="user-chip-name" id="headerUserName">Parth Goyal</span>
+            <span class="user-chip-campus" id="headerUserCampus">KIET • STUDENT</span>
+          </div>
+        </div>
+
+        <!-- Always Visible Theme Toggle Button -->
+        <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Light/Dark Theme" aria-label="Toggle theme">🌙</button>
+
+        <!-- Logout Button (Allows switching role by signing in with new credentials) -->
+        <button class="btn-switch-account" onclick="logoutToAuthModal()" title="Logout and select role / enter credentials">
+          🚪 Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- TAB 1: EXPLORE EVENTS (HOMEPAGE) -->
+  <main id="tab-explore" class="tab-content active">
+    <!-- Hero Banner -->
+    <section class="hero-section">
+      <div class="hero-glow"></div>
+      <!-- Festive celebration floating particles -->
+      <div class="festive-particles" aria-hidden="true">
+        <span class="particle p-1">✨</span>
+        <span class="particle p-2">🎉</span>
+        <span class="particle p-3">🚀</span>
+        <span class="particle p-4">💡</span>
+        <span class="particle p-5">🎨</span>
+        <span class="particle p-6">🔥</span>
+        <span class="particle p-7">⭐</span>
+        <span class="particle p-8">⚡</span>
+      </div>
+      <div class="container hero-content">
+        <div class="hero-tag">🔥 MULTI-CAMPUS EVENT DISCOVERY PORTAL</div>
+        <h1 class="hero-title">Experience Campus Life Across <span class="gradient-text">Delhi-NCR</span></h1>
+        <p class="hero-description">
+          Discover verified flagship hackathons, cultural festivals, robotics workshops, and real-time student projects across AKGEC, KIET, ABES, Galgotias, GL Bajaj, and JSSATE with Google Map locations and interactive calendar tracking.
+        </p>
+
+        <!-- Live Website Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="statsLiveCount">12+</div>
+            <div class="stat-label">Live Campus Events</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">6</div>
+            <div class="stat-label">Partner Colleges</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statsProjectCount">12</div>
+            <div class="stat-label">Real-Time Projects</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statsRegisteredCount">0</div>
+            <div class="stat-label">My Registered Passes</div>
+          </div>
+        </div>
+
+        <!-- Hero Search Bar -->
+        <div class="hero-search-wrapper">
+          <div class="search-input-box">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="searchInput" placeholder="Search by title, tech stack, host society, venue, or college..." oninput="handleSearch(this.value)">
+            <button class="clear-search-btn" id="clearSearchBtn" onclick="clearSearch()" style="display: none;">✕</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters, View Mode & Sorting Bar -->
+    <section class="filters-section">
+      <div class="container">
+        <!-- Official Dean & Faculty Circular Notice Bar for Students -->
+        <div class="student-notice-bar" id="studentDeanNoticeBar">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 22px;">📢</span>
+            <div>
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent-primary); letter-spacing: 0.5px;">
+                Official Institutional Notice from Dean Academics
+              </div>
+              <div style="font-size: 13.5px; font-weight: 600; color: var(--text-primary);" id="latestDeanNoticeText">
+                On-Duty (OD) Academic Attendance Exemption Approved for All Hackathon & Fest Participants.
+              </div>
+            </div>
+          </div>
+          <button class="btn-secondary sm" onclick="openStudentCircularModal()">
+            📄 Read Official Notice
+          </button>
+        </div>
+
+        <!-- Top Row: Category Pills + View Switcher (Cards Grid vs Calendar View) -->
+        <div class="view-and-categories-row">
+          <div class="category-pills" id="categoryPills">
+            <button class="pill active" onclick="setScopeFilter('ALL')">⭐ All Opportunities</button>
+            <button class="pill my-campus-pill" id="myCampusFilterBtn" onclick="setScopeFilter('MY_CAMPUS')">🏛️ My Campus Events</button>
+            <button class="pill" id="scopeExclusiveBtn" onclick="setScopeFilter('EXCLUSIVE')">🔒 Campus Exclusive Only</button>
+            <button class="pill" id="scopeOpenBtn" onclick="setScopeFilter('OPEN')">🌐 Inter-College Open</button>
+            <button class="pill" id="scopeOutsideBtn" onclick="setScopeFilter('OUTSIDE')">🚀 Outside Events Only</button>
+            <button class="pill" onclick="setCategory('Tech')">💻 Tech & Hackathons</button>
+            <button class="pill" onclick="setCategory('Cultural')">🎭 Cultural & Arts</button>
+            <button class="pill" onclick="setCategory('Workshop')">🛠️ Workshops</button>
+          </div>
+
+          <!-- Explore View Mode Toggle (Grid vs Monthly Calendar) -->
+          <div class="view-mode-toggle">
+            <button class="view-toggle-btn active" id="btnViewGrid" onclick="setExploreViewMode('grid')">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              Grid View
+            </button>
+            <button class="view-toggle-btn" id="btnViewCalendar" onclick="setExploreViewMode('calendar')">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              Monthly Calendar View
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Dropdowns Row -->
+        <div class="filters-row">
+          <div class="filter-group">
+            <label for="collegeFilter">🏛️ Campus:</label>
+            <select id="collegeFilter" onchange="handleCollegeFilter(this.value)">
+              <option value="ALL">All Campuses</option>
+              <option value="akgec">AKGEC (Ghaziabad)</option>
+              <option value="kiet">KIET University (Muradnagar)</option>
+              <option value="abes">ABES (Ghaziabad)</option>
+              <option value="galgotias">Galgotias University (Gr. Noida)</option>
+              <option value="glbajaj">GL Bajaj (Gr. Noida)</option>
+              <option value="jssate">JSSATE (Noida)</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="dateFilter">📅 Date Range:</label>
+            <select id="dateFilter" onchange="handleDateFilter(this.value)">
+              <option value="ALL">All Dates</option>
+              <option value="THIS_MONTH">November 2026</option>
+              <option value="NEXT_MONTH">December 2026</option>
+              <option value="EARLY_DATES">Next 14 Days</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="sortOption">↕️ Sort By:</label>
+            <select id="sortOption" onchange="handleSort(this.value)">
+              <option value="UPCOMING">Upcoming First</option>
+              <option value="POPULARITY">Most Popular</option>
+              <option value="SEATS_LEFT">Fewest Seats Left</option>
+              <option value="TITLE">Title (A-Z)</option>
+            </select>
+          </div>
+
+          <div class="filter-group checkbox-group">
+            <label class="custom-checkbox">
+              <input type="checkbox" id="availOnlyCheckbox" onchange="handleAvailOnly(this.checked)">
+              <span class="checkmark"></span>
+              Seats Available Only
+            </label>
+          </div>
+        </div>
+
+        <div class="feed-summary-row">
+          <div id="resultsCountText" class="results-count">Showing campus events</div>
+          <button class="reset-filters-btn" onclick="resetAllFilters()">Reset All Filters</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 1: MONTHLY EVENT CALENDAR CONTAINER -->
+    <section id="calendarViewContainer" class="calendar-view-section container" style="display: none;">
+      <div class="calendar-wrapper-card">
+        <!-- Month Navigation Bar -->
+        <div class="calendar-header-bar">
+          <div class="calendar-month-title-wrap">
+            <h3 class="calendar-month-title" id="calendarMonthTitle">November 2026</h3>
+            <span class="calendar-event-count" id="calendarMonthEventCount">8 Events this Month</span>
+          </div>
+
+          <div class="calendar-nav-controls">
+            <button class="btn-cal-nav" onclick="navigateCalendarMonth(-1)">← Prev Month</button>
+            <button class="btn-cal-today" onclick="resetCalendarToCurrentMonth()">Today</button>
+            <button class="btn-cal-nav" onclick="navigateCalendarMonth(1)">Next Month →</button>
+          </div>
+        </div>
+
+        <!-- Days of Week Header -->
+        <div class="calendar-days-header">
+          <div>SUN</div>
+          <div>MON</div>
+          <div>TUE</div>
+          <div>WED</div>
+          <div>THU</div>
+          <div>FRI</div>
+          <div>SAT</div>
+        </div>
+
+        <!-- Calendar Month Grid (Rendered via JS) -->
+        <div class="calendar-days-grid" id="calendarDaysGrid">
+          <!-- Populated by JavaScript -->
+        </div>
+
+        <!-- Selected Date Events Showcase Banner -->
+        <div class="calendar-selected-day-banner" id="calendarSelectedDayBanner" style="display: none;">
+          <div class="cal-banner-header">
+            <h4 id="calendarSelectedDayTitle">Events on November 21, 2026</h4>
+            <button class="btn-secondary sm" onclick="clearSelectedCalendarDay()">Show Full Month</button>
+          </div>
+          <div class="cal-day-events-list" id="calendarDayEventsList">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: STANDARD EVENTS CARDS GRID -->
+    <section id="gridViewContainer" class="events-grid-section container">
+      <div id="eventsGrid" class="events-grid">
+        <!-- Rendered dynamically via JavaScript -->
+      </div>
+    </section>
+  </main>
+
+  <!-- TAB: FIND MY SQUAD (INTER-COLLEGE HACKATHON TEAMMATE MATCHMAKER) -->
+  <main id="tab-squads" class="tab-content">
+    <div class="container section-padding">
+      <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <div class="campus-tag-pill" style="margin-bottom: 8px;">🤝 Inter-College Hackathon Matchmaker</div>
+          <h2 class="section-title">Find My Squad</h2>
+          <p class="section-subtitle">Connect with solo developers, AI/ML engineers, UI/UX designers, and pitch presenters across KIET, AKGEC, ABES, Galgotias, GL Bajaj, and JSSATE.</p>
+        </div>
+        <button class="btn-primary" onclick="openCreateSquadModal()" style="display: flex; align-items: center; gap: 8px;">
+          <span>➕</span> Post Squad Request
+        </button>
+      </div>
+
+      <!-- Squad Filter Controls -->
+      <div class="squad-filter-bar">
+        <!-- Search & Dropdowns Row -->
+        <div class="squad-filter-row">
+          <div class="squad-search-wrap">
+            <input type="text" id="squadSearchInput" placeholder="🔍 Search by student name, role, tech stack, or keyword..." oninput="handleSquadSearch(this.value)">
+          </div>
+
+          <div class="squad-dropdown-wrap">
+            <select id="squadEventFilter" onchange="handleSquadEventFilter(this.value)">
+              <option value="ALL">🎯 All Hackathons & Events</option>
+              <!-- Populated via JS -->
+            </select>
+          </div>
+
+          <div class="squad-dropdown-wrap">
+            <select id="squadCollegeFilter" onchange="handleSquadCollegeFilter(this.value)">
+              <option value="ALL">🏛️ All Colleges</option>
+              <option value="kiet">KIET</option>
+              <option value="akgec">AKGEC</option>
+              <option value="abes">ABES</option>
+              <option value="galgotias">Galgotias</option>
+              <option value="glbajaj">GL Bajaj</option>
+              <option value="jssate">JSSATE</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Post Type Pills -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 14px;">
+          <div class="squad-type-pills" id="squadTypePills">
+            <button class="pill active" onclick="setSquadTypeFilter('ALL')">All Squad Posts</button>
+            <button class="pill" onclick="setSquadTypeFilter('TEAM_SEEKING_MEMBERS')">👥 Teams Seeking Members</button>
+            <button class="pill" onclick="setSquadTypeFilter('INDIVIDUAL_SEEKING_TEAM')">👤 Solo Looking for Team</button>
+          </div>
+
+          <div class="squad-count-indicator" id="squadCountText">
+            Showing all squad calls
+          </div>
+        </div>
+
+        <!-- Skills Filter Pills -->
+        <div class="squad-skills-filter-row" style="margin-top: 14px;">
+          <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Filter by Skill:</span>
+          <div class="skill-pills-list" id="squadSkillPills">
+            <button class="skill-filter-pill active" onclick="setSquadSkillFilter('ALL')">All Skills</button>
+            <button class="skill-filter-pill" onclick="setSquadSkillFilter('AI/ML')">AI/ML</button>
+            <button class="skill-filter-pill" onclick="setSquadSkillFilter('Web3')">Web3</button>
+            <button class="skill-filter-pill" onclick="setSquadSkillFilter('React')">React / Web</button>
+            <button class="skill-filter-pill" onclick="setSquadSkillFilter('Python')">Python / Backend</button>
+            <button class="skill-filter-pill" onclick="setSquadSkillFilter('Hardware/IoT')">Hardware / IoT</button>
+            <button class="skill-filter-pill" onclick="setSquadSkillFilter('UI/UX Design')">UI/UX Design</button>
+            <button class="skill-filter-pill" onclick="setSquadSkillFilter('Pitching')">Pitching / Presenter</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Squad Cards Grid -->
+      <div class="squad-posts-grid" id="squadPostsGrid">
+        <!-- Rendered dynamically via JavaScript -->
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB 2: REAL-TIME STUDENT PROJECTS & INNOVATIONS -->
+  <main id="tab-projects" class="tab-content">
+    <div class="container section-padding">
+      <div class="page-header">
+        <div>
+          <h2 class="section-title">Real-Time Projects Across Campuses</h2>
+          <p class="section-subtitle">Explore live engineering projects, AI models, hardware prototypes, and SIH winning solutions built by NCR university students.</p>
+        </div>
+        <div class="project-filter-buttons" id="projectCampusFilterButtons">
+          <button class="pill active" onclick="filterProjectsByCollege('ALL')">All Campuses</button>
+          <button class="pill" onclick="filterProjectsByCollege('akgec')">AKGEC</button>
+          <button class="pill" onclick="filterProjectsByCollege('kiet')">KIET</button>
+          <button class="pill" onclick="filterProjectsByCollege('abes')">ABES</button>
+          <button class="pill" onclick="filterProjectsByCollege('galgotias')">Galgotias</button>
+          <button class="pill" onclick="filterProjectsByCollege('glbajaj')">GL Bajaj</button>
+          <button class="pill" onclick="filterProjectsByCollege('jssate')">JSSATE</button>
+        </div>
+      </div>
+
+      <!-- Real-Time Projects Grid -->
+      <div id="projectsGrid" class="projects-grid">
+        <!-- Rendered dynamically via JavaScript -->
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB 3: MY REGISTERED PASSES (STUDENT PROFILE) -->
+  <main id="tab-passes" class="tab-content">
+    <div class="container section-padding">
+      <div class="page-header">
+        <div>
+          <h2 class="section-title">My Registered Events & Passes</h2>
+          <p class="section-subtitle">Your confirmed digital passes with entry QR codes, Google Map directions, and attendee credentials.</p>
+        </div>
+        <button class="btn-primary" onclick="showTab('explore')">+ Explore More Events</button>
+      </div>
+
+      <div id="emptyPassesState" class="empty-state" style="display: none;">
+        <div class="empty-icon">🎟️</div>
+        <h3>No Registered Events Yet</h3>
+        <p>Browse the multi-campus discovery feed and register for exciting tech, cultural, and workshop events.</p>
+        <button class="btn-primary" onclick="showTab('explore')">Explore Events Now</button>
+      </div>
+
+      <div id="registeredPassesList" class="passes-grid">
+        <!-- Rendered via JavaScript -->
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB 4: ORGANIZER & FACULTY HUB (REAL-TIME APPLICANT TELEMETRY) -->
+  <main id="tab-organizer" class="tab-content">
+    <div class="container section-padding">
+      <div class="page-header">
+        <div>
+          <h2 class="section-title">Organizer & Faculty Telemetry Hub</h2>
+          <p class="section-subtitle">Real-time applicant tracking: See instantly who registered, when they applied, verified student credentials, and venue check-in telemetry.</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn-primary" onclick="openEmailComposerModal()">✉️ Send Email to Students</button>
+          <button class="btn-secondary" onclick="simulateLiveApplicantArrival()">▶ Simulate Real-Time Applicant</button>
+          <button class="btn-secondary" onclick="exportAttendeeCsv()">📥 Export Attendee CSV</button>
+          <button class="btn-secondary" onclick="openScannerModal()">📷 Scan Entry Pass</button>
+          <button class="btn-primary" onclick="openPublishModal()">+ Publish New Event</button>
+        </div>
+      </div>
+
+      <div class="organizer-metrics">
+        <div class="metric-card">
+          <div class="metric-num" id="orgTotalEvents">12</div>
+          <div class="metric-txt">Published Events</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num" id="orgTotalSeats">2,480</div>
+          <div class="metric-txt">Total Campus Capacity</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num text-emerald" id="orgTotalRegistrations">842</div>
+          <div class="metric-txt">Live Confirmed Registrations</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num" id="orgActiveCampusesCount">6 Campuses</div>
+          <div class="metric-txt">Partner Institutions Active</div>
+        </div>
+      </div>
+
+      <!-- Real-Time Incoming Applicant Stream -->
+      <div class="realtime-stream-card">
+        <div class="stream-header">
+          <div class="stream-live-indicator">
+            <span class="live-dot"></span>
+            <strong>Real-Time Live Application Stream</strong>
+            <span class="stream-sub">Organizers and faculty receive instant telemetry when students register</span>
+          </div>
+          <span class="stream-badge" id="streamBadgeCounter">Live Sync Active</span>
+        </div>
+        <div class="stream-list" id="realtimeApplicantStream">
+          <!-- Populated by JavaScript in real-time -->
+        </div>
+      </div>
+
+      <!-- Full Attendee Roster Table -->
+      <div class="attendee-roster-card">
+        <div class="roster-header">
+          <div>
+            <h3 class="roster-title">Comprehensive Attendee Roster (Who Registered & When)</h3>
+            <p class="roster-subtitle">Search and filter all student applications received across events with exact timestamps.</p>
+          </div>
+          <div class="roster-filter-actions">
+            <select id="rosterEventFilter" onchange="filterRosterByEvent(this.value)">
+              <option value="ALL">All Events Roster</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="roster-table-responsive">
+          <table class="roster-table">
+            <thead>
+              <tr>
+                <th>Registration Time</th>
+                <th>Student Attendee</th>
+                <th>College & Roll No</th>
+                <th>Event Title</th>
+                <th>Participation</th>
+                <th>Contact</th>
+                <th>Status</th>
+                <th>Email Student</th>
+              </tr>
+            </thead>
+            <tbody id="rosterTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Organiser Participant Broadcast Center (Directly addressing announcements for event organiser) -->
+      <div class="org-broadcast-card" id="orgBroadcastSec" style="margin-top: 32px;">
+        <div class="dean-table-header">
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+              <span>📣</span> Event Organiser Participant Broadcast & Alerts
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted);">
+              Broadcast urgent notifications, schedule amendments, lab credentials, or venue alerts directly to all registered students of your event.
+            </p>
+          </div>
+          <span class="stream-badge">Instant Push Stream Active</span>
+        </div>
+
+        <form onsubmit="handleSendOrganiserBroadcast(event)">
+          <div class="broadcast-composer-grid">
+            <div>
+              <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px; display: block;">Select Target Event:</label>
+              <select id="broadcastTargetEvent" class="campus-search-input" style="height: 42px;" required>
+                <!-- Populated dynamically via JS -->
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px; display: block;">Announcement Category:</label>
+              <select id="broadcastCategory" class="campus-search-input" style="height: 42px;">
+                <option value="alert">🚨 Urgent Gate / Check-in Alert</option>
+                <option value="venue">📍 Venue / Room / Audi Shift</option>
+                <option value="schedule">⏰ Schedule & Submission Update</option>
+                <option value="general" selected>🎉 General Participant Announcement</option>
+              </select>
+            </div>
+          </div>
+          <textarea id="broadcastMessageInput" class="broadcast-textarea" placeholder="Type your announcement to all registered attendees (e.g. 'Reporting at C-Block Audi at 08:30 AM. Bring your college ID card!')..." required></textarea>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 12px; color: var(--text-muted);" id="broadcastRecipientEstimate">Audience: ~180 registered attendees</span>
+            <button type="submit" class="btn-primary">
+              🚀 Broadcast Announcement to Participants
+            </button>
+          </div>
+        </form>
+
+        <h4 style="font-size: 14px; font-weight: 700; margin-top: 22px; color: var(--text-secondary);">Dispatched Announcements & Alerts History</h4>
+        <div class="broadcast-history-list" id="orgBroadcastHistoryList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <h3 class="subsection-title" style="margin-top: 36px;">Published Campus Events & Capacity</h3>
+      <div id="managedEventsList" class="managed-events-grid">
+        <!-- Rendered dynamically via JavaScript -->
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB: FACULTY & DEAN EVENT TRACKING, COMPLIANCE & CIRCULARS -->
+  <main id="tab-dean" class="tab-content">
+    <div class="container section-padding">
+      <!-- Dean Hero Banner -->
+      <div class="dean-hero-banner">
+        <div class="dean-badge-pill">
+          <span>🏛️</span>
+          <span>OFFICE OF THE DEAN & ACADEMIC COORDINATION</span>
+        </div>
+        <h2 style="font-size: 26px; font-weight: 800; margin-bottom: 8px;">
+          Institutional Event Oversight & Compliance Portal
+        </h2>
+        <p style="font-size: 14px; color: var(--text-secondary); max-width: 820px; line-height: 1.6;">
+          Official governance dashboard for Deans, HODs, and Faculty Coordinators: Real-time event tracking details, departmental turnout ratios, academic on-duty (OD) compliance, safety clearances, and institutional circulars.
+        </p>
+        <div style="display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap;">
+          <button class="btn-primary" onclick="openCreateDeanCircularModal()">
+            📢 Issue New Official Circular
+          </button>
+          <button class="btn-secondary" onclick="exportDeanComplianceCsv()">
+            📥 Download Full Tracking Matrix (CSV)
+          </button>
+          <button class="btn-secondary" onclick="openDeanAuditSummaryModal()">
+            📊 Academic Turnout Summary
+          </button>
+        </div>
+      </div>
+
+      <!-- Dean KPI Metrics -->
+      <div class="organizer-metrics">
+        <div class="metric-card">
+          <div class="metric-num" id="deanTrackedEventsCount">24</div>
+          <div class="metric-txt">Active Monitored Events</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num text-emerald" id="deanTotalRegistrationsCount">1,480+</div>
+          <div class="metric-txt">Student Enrolments Tracked</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num" id="deanActiveDeptsCount">8 Depts</div>
+          <div class="metric-txt">Academic Departments Participating</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num" style="color: #6366f1;">100%</div>
+          <div class="metric-txt">Safety & Dean Clearances</div>
+        </div>
+      </div>
+
+      <!-- RECHARTS VISUAL DASHBOARD FOR THE DEAN (Attendance Trends & Department Participation) -->
+      <div class="dean-tracking-table-card dean-visual-dashboard-card" id="deanRechartsSec">
+        <div class="dean-table-header">
+          <div>
+            <div class="recharts-badge">
+              <span class="pulse-dot"></span>
+              <span>⚡ RECHARTS VISUAL INTELLIGENCE DASHBOARD</span>
+            </div>
+            <h3 style="font-size: 20px; font-weight: 800; margin-top: 6px;">📊 Institutional Event Attendance Trends & Departmental Participation</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 3px;">
+              Live visual telemetry powered by <code>Recharts</code>: Longitudinal event attendance velocity over time, departmental participation rates, and multi-campus mobility.
+            </p>
+          </div>
+          <div class="recharts-controls-wrap">
+            <div class="chart-timeframe-selector">
+              <button class="timeframe-btn active" id="tfBtn-6m" onclick="setRechartsTimeframe('6m')">Past 6 Months</button>
+              <button class="timeframe-btn" id="tfBtn-1y" onclick="setRechartsTimeframe('1y')">Academic Year</button>
+              <button class="timeframe-btn" id="tfBtn-all" onclick="setRechartsTimeframe('all')">Cumulative</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="recharts-grid-container">
+          <!-- Chart 1: Event Attendance Trajectory Over Time (Area Chart) -->
+          <div class="recharts-chart-box">
+            <div class="chart-box-header">
+              <div>
+                <h4 class="chart-box-title">📈 Event Attendance Velocity Over Time</h4>
+                <span class="chart-box-sub">Registered students vs Actual checked-in vs OD approvals per month</span>
+              </div>
+              <div class="chart-legend-custom">
+                <span class="legend-pill" style="--c: #8b5cf6;"><span class="dot" style="background:#8b5cf6;"></span> Registered</span>
+                <span class="legend-pill" style="--c: #10b981;"><span class="dot" style="background:#10b981;"></span> Attended</span>
+                <span class="legend-pill" style="--c: #38bdf8;"><span class="dot" style="background:#38bdf8;"></span> OD Sanctioned</span>
+              </div>
+            </div>
+            <div id="rechartsAttendanceContainer" class="recharts-mount-point" style="width: 100%; min-height: 310px;"></div>
+          </div>
+
+          <!-- Chart 2: Departmental Participation Rates Over Time (Grouped Bar Chart) -->
+          <div class="recharts-chart-box">
+            <div class="chart-box-header">
+              <div>
+                <h4 class="chart-box-title">🏛️ B.Tech Departmental Participation Rates Over Time</h4>
+                <span class="chart-box-sub">Comparative participation rates (%) across all 13 B.Tech engineering departments</span>
+              </div>
+              <div class="chart-legend-custom">
+                <span class="legend-pill" style="--c: #6366f1;"><span class="dot" style="background:#6366f1;"></span> Fall '25 Rate (%)</span>
+                <span class="legend-pill" style="--c: #ec4899;"><span class="dot" style="background:#ec4899;"></span> Spring '26 Rate (%)</span>
+              </div>
+            </div>
+            <!-- B.Tech Focus Cluster Filter Pills -->
+            <div class="recharts-dept-cluster-pills" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+              <button class="pill sm active" id="deptClusterBtn-all" onclick="setRechartsDeptCluster('all')">⭐ All 13 B.Tech Departments</button>
+              <button class="pill sm" id="deptClusterBtn-cs" onclick="setRechartsDeptCluster('cs')">💻 CS & IT Focus (7)</button>
+              <button class="pill sm" id="deptClusterBtn-ece" onclick="setRechartsDeptCluster('ece')">⚡ Electronics & Electrical (4)</button>
+              <button class="pill sm" id="deptClusterBtn-mech" onclick="setRechartsDeptCluster('mech')">⚙️ Mechanical & Automation (2)</button>
+            </div>
+            <div id="rechartsDeptContainer" class="recharts-mount-point" style="width: 100%; min-height: 310px;"></div>
+          </div>
+
+          <!-- Chart 3: Cross-Campus Mobilization & Host Capacity Utilization -->
+          <div class="recharts-chart-box chart-box-wide">
+            <div class="chart-box-header">
+              <div>
+                <h4 class="chart-box-title">🌐 Cross-Campus Turnout Distribution & Inter-College Delegations</h4>
+                <span class="chart-box-sub">Host campus attendee percentage vs external visitor delegations across Delhi-NCR partner institutions</span>
+              </div>
+              <div class="chart-legend-custom">
+                <span class="legend-pill" style="--c: #0284c7;"><span class="dot" style="background:#0284c7;"></span> Host Campus (%)</span>
+                <span class="legend-pill" style="--c: #f59e0b;"><span class="dot" style="background:#f59e0b;"></span> Guest Delegations (%)</span>
+              </div>
+            </div>
+            <div id="rechartsCampusContainer" class="recharts-mount-point" style="width: 100%; min-height: 250px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 1: Official Dean Announcements & Circulars -->
+      <div class="dean-tracking-table-card" id="deanAnnouncementsSec">
+        <div class="dean-table-header">
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800;">📢 Official Campus & Academic Circulars</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">
+              Notices issued by Office of the Dean to students, faculty advisors, and department coordinators.
+            </p>
+          </div>
+          <button class="btn-primary sm" onclick="openCreateDeanCircularModal()">+ Post Circular</button>
+        </div>
+        <div class="dean-announcements-grid" id="deanCircularsGrid">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- Section 2: Comprehensive Event Tracking Details & Compliance Matrix -->
+      <div class="dean-tracking-table-card" id="deanTrackingSec">
+        <div class="dean-table-header">
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800;">📊 Event Tracking Details & Department Matrix</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">
+              Comprehensive live status of every campus event: Live registrations, department turnouts, safety compliance, and coordinator assignments.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="deanCampusFilter" class="campus-search-input" style="width: auto; height: 38px;" onchange="renderDeanEventTrackingTable(this.value)">
+              <option value="ALL">All Partner Campuses</option>
+              <option value="kiet">KIET Group of Institutions</option>
+              <option value="akgec">AKGEC Ghaziabad</option>
+              <option value="abes">ABES Engineering College</option>
+              <option value="jssate">JSSATE Noida</option>
+              <option value="galgotias">Galgotias University</option>
+              <option value="glbajaj">GL Bajaj Greater Noida</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="roster-table-responsive">
+          <table class="dean-tracking-table">
+            <thead>
+              <tr>
+                <th>Event & Host Society</th>
+                <th>Campus / Venue</th>
+                <th>Schedule</th>
+                <th>Enrolment / Capacity</th>
+                <th>Top Department</th>
+                <th>Faculty In-Charge</th>
+                <th>Approval Status</th>
+                <th>Oversight Actions</th>
+              </tr>
+            </thead>
+            <tbody id="deanTrackingTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section 3: Department Participation Analytics -->
+      <div class="dean-tracking-table-card" id="deanDeptSec">
+        <div class="dean-table-header">
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800;">📈 Department Turnout Distribution</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">Student registration share across academic branches.</p>
+          </div>
+        </div>
+        <div class="dept-turnout-container" id="deanDeptAnalyticsGrid">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB 5: CAMPUSES DIRECTORY -->
+  <main id="tab-colleges" class="tab-content">
+    <div class="container section-padding">
+      <div class="page-header campus-directory-header">
+        <div>
+          <div class="campus-header-top-badge">
+            <span class="campus-badge-pulse"></span>
+            <span>🏛️ Verified Delhi-NCR Academic Network</span>
+          </div>
+          <h2 class="section-title">Participating Partner Campuses</h2>
+          <p class="section-subtitle">
+            Explore premier engineering institutions & universities across Ghaziabad, Noida, and Greater Noida with high-resolution campus photos, live fests, active student projects, and real-time Metro & Rapid Rail transit navigation.
+          </p>
+        </div>
+      </div>
+
+      <!-- Campus Search & Region Filter Toolbar -->
+      <div class="campuses-toolbar">
+        <div class="campus-search-box">
+          <span class="campus-search-icon">🔍</span>
+          <input 
+            type="text" 
+            id="campusSearchInput" 
+            class="campus-search-input" 
+            placeholder="Search by college name, abbreviation (KIET, AKGEC, ABES, GL Bajaj...), or city..." 
+            oninput="handleCampusSearch(this.value)"
+          >
+          <button class="campus-search-clear" id="campusSearchClear" onclick="clearCampusSearch()" title="Clear Search" style="display: none;">✕</button>
+        </div>
+
+        <div class="campus-region-filters" id="campusRegionFilters">
+          <button class="campus-filter-pill active" data-region="all" onclick="filterCampusesByRegion('all')">
+            🏛️ All Campuses (<span id="countPillAll">6</span>)
+          </button>
+          <button class="campus-filter-pill" data-region="ghaziabad" onclick="filterCampusesByRegion('ghaziabad')">
+            📍 Ghaziabad (<span id="countPillGzb">3</span>)
+          </button>
+          <button class="campus-filter-pill" data-region="greater-noida" onclick="filterCampusesByRegion('greater-noida')">
+            📍 Greater Noida (<span id="countPillGrNoida">2</span>)
+          </button>
+          <button class="campus-filter-pill" data-region="noida" onclick="filterCampusesByRegion('noida')">
+            📍 Noida (<span id="countPillNoida">1</span>)
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Campuses Count / Status Header -->
+      <div class="campus-meta-bar">
+        <div id="campusResultsCount" class="campus-results-count">
+          Showing <strong>6 of 6</strong> partner colleges
+        </div>
+        <div class="campus-quick-transit-tags">
+          <span class="transit-tag-pill metro-red">🚇 Red Line</span>
+          <span class="transit-tag-pill metro-blue">🚇 Blue Line</span>
+          <span class="transit-tag-pill metro-aqua">🚇 Aqua Line</span>
+          <span class="transit-tag-pill metro-rrts">🚆 Namo Bharat RRTS</span>
+        </div>
+      </div>
+
+      <!-- Campuses Grid dynamically rendered -->
+      <div id="campusesGrid" class="campuses-grid">
+        <!-- Rendered by renderCampuses() in app.js -->
+      </div>
+    </div>
+  </main>
+
+  <!-- CAMPUS TRANSIT & ROUTE DETAILS MODAL -->
+  <div id="campusTransitModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog transit-modal-dialog">
+      <button class="modal-close-btn" onclick="closeCampusTransitModal()" title="Close Transit Guide">✕</button>
+      <div id="campusTransitModalContent">
+        <!-- Dynamic Transit Instructions -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ONBOARDING & SIGN-IN MODAL (FIRST OPENING SCREEN) -->
+  <div id="authModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog auth-dialog">
+      <div class="auth-header">
+        <div class="auth-brand">
+          <div class="brand-logo lg">
+            <img src="logo.png" alt="EvenTrix Logo" class="brand-logo-img">
+          </div>
+          <div>
+            <h2 class="auth-title">Welcome to EvenTrix</h2>
+            <p class="auth-subtitle">Delhi-NCR Multi-Campus Event & Opportunities Network</p>
+          </div>
+        </div>
+        <button id="authCloseBtn" class="modal-close-btn" onclick="closeAuthModal()" style="display: none;">✕</button>
+      </div>
+
+      <div class="auth-body">
+        <p class="auth-instruction">
+          Please select your college campus, pick your persona, and enter your credentials to access verified college events, real-time projects, and digital passes.
+        </p>
+
+        <!-- Campus Selection Grid -->
+        <div class="auth-section-title">
+          <span>🏛️</span> Select Your Campus / Institute
+        </div>
+        <div class="institute-selector-grid" id="authInstituteGrid">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Role Selection -->
+        <div class="auth-section-title" style="margin-top: 20px;">
+          <span>👤</span> Choose Your Campus Persona
+        </div>
+        <div class="role-selector-row" id="authRoleRow">
+          <div class="role-card active" onclick="selectAuthRole('student')" id="authRoleStudent">
+            <div class="role-icon">🎓</div>
+            <div class="role-info">
+              <div class="role-title">Student</div>
+              <div class="role-desc">Discover events, claim free passes, explore student projects</div>
+            </div>
+          </div>
+          <div class="role-card" onclick="selectAuthRole('organizer')" id="authRoleOrganizer">
+            <div class="role-icon">📢</div>
+            <div class="role-info">
+              <div class="role-title">Event Organizer</div>
+              <div class="role-desc">Host events, get real-time applicant alerts, test gate QR scanner</div>
+            </div>
+          </div>
+          <div class="role-card" onclick="selectAuthRole('dean')" id="authRoleDean">
+            <div class="role-icon">🏛️</div>
+            <div class="role-info">
+              <div class="role-title">Faculty / Dean</div>
+              <div class="role-desc">Institutional audit, who registered & when telemetry, multi-campus reports</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Credentials Form -->
+        <div class="auth-section-title" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <span id="authCredTitle"><span>📝</span> Enter Your Credentials</span>
+          <div class="auth-quick-fill-wrap" style="display: flex; gap: 6px;">
+            <button type="button" class="btn-quick-fill" onclick="quickFillCredentials('student')" title="Fill Student Credentials">🎓 Student Demo</button>
+            <button type="button" class="btn-quick-fill" onclick="quickFillCredentials('dean')" title="Fill Faculty Dean Credentials">🏛️ Dean Demo</button>
+            <button type="button" class="btn-quick-fill" onclick="quickFillCredentials('organizer')" title="Fill Organiser Credentials">📢 Organiser Demo</button>
+          </div>
+        </div>
+        <form id="authProfileForm" onsubmit="handleAuthSubmit(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" id="authName" required placeholder="e.g. Parth Goyal">
+            </div>
+            <div class="form-group">
+              <label>Student Roll Number / Enrollment ID *</label>
+              <input type="text" id="authRollNo" required placeholder="e.g. 2200270100099">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>College Email Address *</label>
+              <input type="email" id="authEmail" required placeholder="e.g. parth@akgec.ac.in">
+            </div>
+            <div class="form-group">
+              <label>Department / Branch (B.Tech) *</label>
+              <select id="authBranch" required>
+                <optgroup label="Electronics, Electrical & Communication Focus">
+                  <option value="Electronics & Communication Engineering (ECE)">Electronics & Communication Engineering (ECE)</option>
+                  <option value="ECE (VLSI Design & Technology)">ECE (VLSI Design & Technology)</option>
+                  <option value="Electrical & Electronics Engineering (EEE)">Electrical & Electronics Engineering (EEE)</option>
+                  <option value="Electrical & Computer Engineering (ELCE)">Electrical & Computer Engineering (ELCE)</option>
+                </optgroup>
+                <optgroup label="Mechanical & Automation Focus">
+                  <option value="Mechanical Engineering (ME)">Mechanical Engineering (ME)</option>
+                  <option value="Advanced Mechatronics & Industrial Automation (AM & IA)">Advanced Mechatronics & Industrial Automation (AM & IA)</option>
+                </optgroup>
+                <optgroup label="Computer Science & Information Technology Focus">
+                  <option value="Computer Science & Engineering (CSE)" selected>Computer Science & Engineering (CSE)</option>
+                  <option value="Computer Science (CS)">Computer Science (CS)</option>
+                  <option value="Information Technology (IT)">Information Technology (IT)</option>
+                  <option value="Computer Science & Information Technology (CSIT)">Computer Science & Information Technology (CSIT)</option>
+                  <option value="CSE (Artificial Intelligence & Machine Learning - AI / AI&ML)">CSE (Artificial Intelligence & Machine Learning - AI / AI&ML)</option>
+                  <option value="CSE (Data Science)">CSE (Data Science)</option>
+                  <option value="CSE (Cyber Security)">CSE (Cyber Security)</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Year of Study *</label>
+              <select id="authYear" required>
+                <option value="1st Year">1st Year (Freshman)</option>
+                <option value="2nd Year">2nd Year (Sophomore)</option>
+                <option value="3rd Year" selected>3rd Year (Junior)</option>
+                <option value="4th Year">4th Year (Senior)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Phone / WhatsApp Number</label>
+              <input type="tel" id="authPhone" placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+            </div>
+          </div>
+
+          <!-- Institutional Security Passcode for Faculty/Organizer Persona -->
+          <div class="form-group" id="authFacultyPassGroup" style="display: none; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); padding: 12px; margin-top: 10px;">
+            <label style="color: #f87171; font-weight: 700;">🔐 Institutional Staff / Faculty Access Key *</label>
+            <input type="password" id="authFacultyPass" placeholder="Enter faculty authorization key (e.g. FAC2026)">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">Institutional authorization requirement for faculty/organizer privileges. Access Key: <code>FAC2026</code></span>
+          </div>
+
+          <div class="auth-action-row">
+            <button type="submit" class="btn-primary auth-submit-btn">
+              Enter EvenTrix Campus Portal →
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVENT DETAILS MODAL WITH INTERACTIVE GOOGLE MAPS -->
+  <div id="eventDetailModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+      <button class="modal-close-btn" onclick="closeEventModal()">✕</button>
+      <div id="eventDetailContent">
+        <!-- Populated via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- SUITABLE REGISTRATION FORM MODAL (USER FILLABLE FORM) -->
+  <div id="registrationModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog registration-dialog">
+      <button class="modal-close-btn" onclick="closeRegistrationModal()">✕</button>
+
+      <div class="reg-modal-header">
+        <span class="reg-badge">🎟️ EVENT REGISTRATION FORM</span>
+        <h3 class="modal-title" id="regEventTitle">Register for Event</h3>
+        <p class="modal-subtitle" id="regEventSubtitle">Provide your verified student information. Event organizers will immediately receive your registration timestamp and credentials.</p>
+      </div>
+
+      <!-- Quick Event Info Card -->
+      <div class="reg-event-summary" id="regEventSummary">
+        <!-- Populated dynamically via JS -->
+      </div>
+
+      <form id="eventRegistrationForm" onsubmit="handleRegistrationSubmit(event)">
+        <input type="hidden" id="regEventId" value="">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" id="regFullName" required placeholder="Your full legal name">
+          </div>
+          <div class="form-group">
+            <label>College / Institution *</label>
+            <select id="regCollegeSelect" required>
+              <option value="akgec">Ajay Kumar Garg Engineering College (AKGEC)</option>
+              <option value="kiet">KIET Group of Institutions (KIET)</option>
+              <option value="abes">ABES Engineering College (ABES)</option>
+              <option value="galgotias">Galgotias University</option>
+              <option value="glbajaj">GL Bajaj Inst. of Technology (GL Bajaj)</option>
+              <option value="jssate">JSS Academy of Tech. Education (JSSATE)</option>
+              <option value="other">Other NCR College</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Student Roll Number / University ID *</label>
+            <input type="text" id="regRollNo" required placeholder="e.g. 2200270100099">
+          </div>
+          <div class="form-group">
+            <label>College Email Address *</label>
+            <input type="email" id="regEmail" required placeholder="student@college.ac.in">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>WhatsApp / Contact Phone *</label>
+            <input type="tel" id="regPhone" required placeholder="10-digit mobile number" pattern="[0-9]{10}">
+          </div>
+          <div class="form-group">
+            <label>Branch / Department (B.Tech) *</label>
+            <select id="regBranch" required>
+              <optgroup label="Electronics, Electrical & Communication Focus">
+                <option value="Electronics & Communication Engineering (ECE)">Electronics & Communication Engineering (ECE)</option>
+                <option value="ECE (VLSI Design & Technology)">ECE (VLSI Design & Technology)</option>
+                <option value="Electrical & Electronics Engineering (EEE)">Electrical & Electronics Engineering (EEE)</option>
+                <option value="Electrical & Computer Engineering (ELCE)">Electrical & Computer Engineering (ELCE)</option>
+              </optgroup>
+              <optgroup label="Mechanical & Automation Focus">
+                <option value="Mechanical Engineering (ME)">Mechanical Engineering (ME)</option>
+                <option value="Advanced Mechatronics & Industrial Automation (AM & IA)">Advanced Mechatronics & Industrial Automation (AM & IA)</option>
+              </optgroup>
+              <optgroup label="Computer Science & Information Technology Focus">
+                <option value="Computer Science & Engineering (CSE)" selected>Computer Science & Engineering (CSE)</option>
+                <option value="Computer Science (CS)">Computer Science (CS)</option>
+                <option value="Information Technology (IT)">Information Technology (IT)</option>
+                <option value="Computer Science & Information Technology (CSIT)">Computer Science & Information Technology (CSIT)</option>
+                <option value="CSE (Artificial Intelligence & Machine Learning - AI / AI&ML)">CSE (Artificial Intelligence & Machine Learning - AI / AI&ML)</option>
+                <option value="CSE (Data Science)">CSE (Data Science)</option>
+                <option value="CSE (Cyber Security)">CSE (Cyber Security)</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Year of Study *</label>
+            <select id="regYear" required>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year" selected>3rd Year</option>
+              <option value="4th Year">4th Year</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Participation Type *</label>
+            <select id="regPartType" onchange="toggleTeamNameField(this.value)">
+              <option value="individual">Individual Participant (Solo)</option>
+              <option value="team">Team Entry / Leader</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" id="teamNameGroup" style="display: none;">
+          <label>Team Name & Co-Members</label>
+          <input type="text" id="regTeamName" placeholder="e.g. Team Matrix (Member 1, Member 2...)">
+        </div>
+
+        <div class="form-group">
+          <label>Special Requests / Dietary / Accessibility (Optional)</label>
+          <input type="text" id="regSpecialReq" placeholder="e.g. Vegetarian lunch, wheelchair access, lab bench request">
+        </div>
+
+        <div class="terms-checkbox-wrap">
+          <label class="custom-checkbox">
+            <input type="checkbox" id="regAgreeTerms" required>
+            <span class="checkmark"></span>
+            I confirm that I will present a valid college ID at the entry gate and authorize the organizing faculty to verify my registration credentials.
+          </label>
+        </div>
+
+        <div class="modal-footer-actions">
+          <button type="button" class="btn-secondary" onclick="closeRegistrationModal()">Cancel</button>
+          <button type="submit" class="btn-primary">
+            Confirm Registration & Generate Digital Pass 🎟️
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DIGITAL TICKET / QR PASS MODAL -->
+  <div id="ticketModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog ticket-dialog">
+      <button class="modal-close-btn" onclick="closeTicketModal()">✕</button>
+      <div id="ticketModalContent">
+        <!-- Populated via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ORGANIZER TICKET SCANNER CAMERA MODAL -->
+  <div id="scannerModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog scanner-dialog" style="max-width: 580px;">
+      <button class="modal-close-btn" onclick="closeScannerModal()">✕</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+        <span style="font-size: 26px;">📷</span>
+        <h3 class="modal-title" style="margin: 0;">Gate Entry Pass Camera Scanner</h3>
+      </div>
+      <p class="modal-subtitle">Direct live camera optical scanning for student QR passes with instant gate verification.</p>
+
+      <!-- Live Camera Viewport -->
+      <div class="scanner-camera-container">
+        <div class="camera-viewport-box" id="cameraViewportBox">
+          <video id="scannerVideo" playsinline autoplay muted></video>
+          <canvas id="scannerCanvas" style="display: none;"></canvas>
+
+          <!-- Optical Viewfinder Frame -->
+          <div class="scanner-viewfinder">
+            <div class="viewfinder-corner tl"></div>
+            <div class="viewfinder-corner tr"></div>
+            <div class="viewfinder-corner bl"></div>
+            <div class="viewfinder-corner br"></div>
+            <div class="laser-scanner-line" id="laserScannerLine"></div>
+          </div>
+
+          <!-- Camera Live Indicator Badge -->
+          <div class="camera-live-badge" id="cameraLiveBadge">
+            <span class="live-dot-pulse"></span>
+            <span id="cameraStatusText">Camera Active • Point at Pass QR</span>
+          </div>
+        </div>
+
+        <!-- Camera Action Toolbar -->
+        <div class="scanner-toolbar">
+          <button type="button" class="btn-scanner-tool" id="btnToggleCamera" onclick="toggleCameraScanner()">
+            <span>⏹</span> <span id="toggleCameraLabel">Pause Camera</span>
+          </button>
+          <button type="button" class="btn-scanner-tool" onclick="flipCameraLens()">
+            <span>🔄</span> Flip Lens
+          </button>
+          <label class="btn-scanner-tool" for="qrFileInput" style="cursor: pointer; margin: 0;">
+            <span>🖼️</span> Upload QR Photo
+            <input type="file" id="qrFileInput" accept="image/*" style="display: none;" onchange="handleQrPhotoUpload(event)">
+          </label>
+          <button type="button" class="btn-scanner-tool" onclick="testScanRegisteredPass()" title="Test scan with first registered attendee pass">
+            <span>⚡</span> Test Scan
+          </button>
+        </div>
+      </div>
+
+      <!-- Verification Result Card (Populated upon detection) -->
+      <div id="scannerResultBox" style="display: none; margin-top: 16px;"></div>
+
+      <!-- Collapsible Keyboard Manual Entry Fallback -->
+      <div class="manual-scan-accordion">
+        <div class="manual-accordion-header" onclick="toggleManualInputDrawer()">
+          <span>⌨️ Keyboard Fallback: Enter Pass ID Manually</span>
+          <span id="manualToggleArrow">▼</span>
+        </div>
+        <div id="manualInputContainer" style="display: none; padding: 12px 14px; background: var(--bg-secondary); border-top: 1px solid var(--border-color);">
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="manualPassIdInput" placeholder="e.g. EVT-108492" style="flex: 1; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 13px;">
+            <button class="btn-primary" onclick="simulateGateCheckIn()">Verify ID</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+        <button class="btn-secondary" onclick="closeScannerModal()">Close Scanner</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELHI-NCR CAMPUS COMMUTE & TRANSIT GUIDE MODAL -->
+  <div id="transitModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog transit-dialog" style="max-width: 640px;">
+      <button class="modal-close-btn" onclick="closeTransitModal()">✕</button>
+
+      <div class="transit-modal-header" style="margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 32px;">🚇</span>
+          <div>
+            <h3 class="modal-title" style="margin: 0;" id="transitCampusName">Delhi-NCR Transit & Commute Guide</h3>
+            <p class="modal-subtitle" style="margin: 0;" id="transitCampusSub">Namo Bharat (RRTS Rapid Rail) & Delhi Metro Connectivity</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="transitModalContent">
+        <!-- Dynamically rendered via JS -->
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap;">
+        <button class="btn-secondary" onclick="closeTransitModal()">Close</button>
+        <a id="transitGoogleMapsBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary">
+          🧭 Open Transit Route on Google Maps ↗
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- PUBLISH EVENT MODAL -->
+  <div id="publishEventModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+      <button class="modal-close-btn" onclick="closePublishModal()">✕</button>
+      <h3 class="modal-title">Publish New Campus Event</h3>
+      <p class="modal-subtitle">Submit event details to the multi-college EvenTrix discovery network.</p>
+
+      <form id="publishEventForm" onsubmit="handlePublishEventSubmit(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Event Title *</label>
+            <input type="text" id="newTitle" required placeholder="e.g. Scrolls 2026: National Tech Expo">
+          </div>
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="newCategory">
+              <option value="Tech">Tech</option>
+              <option value="Cultural">Cultural</option>
+              <option value="Workshop">Workshop</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Host Club / Society *</label>
+            <input type="text" id="newHost" required placeholder="e.g. CSI & SDC AKGEC">
+          </div>
+          <div class="form-group">
+            <label>Campus *</label>
+            <select id="newInstitution">
+              <option value="akgec">AKGEC Ghaziabad</option>
+              <option value="kiet">KIET University</option>
+              <option value="abes">ABES Ghaziabad</option>
+              <option value="galgotias">Galgotias University</option>
+              <option value="glbajaj">GL Bajaj Gr. Noida</option>
+              <option value="jssate">JSSATE Noida</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date & Time *</label>
+            <input type="text" id="newDateTime" required placeholder="e.g. Nov 28, 2026 • 10:00 AM">
+          </div>
+          <div class="form-group">
+            <label>Venue / Location *</label>
+            <input type="text" id="newLocation" required placeholder="e.g. Main Auditorium, CS Block">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Total Seat Capacity *</label>
+            <input type="number" id="newSeats" required min="10" max="1000" value="150">
+          </div>
+          <div class="form-group">
+            <label>Banner Image URL</label>
+            <input type="url" id="newImage" placeholder="https://images.unsplash.com/photo-...">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Full Event Description & Prerequisites *</label>
+          <textarea id="newDescription" rows="3" required placeholder="Provide an overview of the event, eligibility, team size, and what to bring..."></textarea>
+        </div>
+
+        <div class="modal-footer-actions">
+          <button type="button" class="btn-secondary" onclick="closePublishModal()">Cancel</button>
+          <button type="submit" class="btn-primary">Publish to Campus Network</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FACULTY & ORGANIZER SECURITY AUTH MODAL -->
+  <div id="facultySecurityModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" style="max-width: 480px;">
+      <button class="modal-close-btn" onclick="closeFacultySecurityModal()">✕</button>
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 42px; margin-bottom: 8px;">🔐</div>
+        <h3 class="modal-title">Institutional Faculty Access</h3>
+        <p class="modal-subtitle">You are signed in as a Student. Access to the Event Organizer Console and Live Applicant Telemetry is restricted to authorized faculty coordinators.</p>
+      </div>
+
+      <div id="facultyAuthError" style="display: none; padding: 10px 14px; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: var(--radius-sm); color: #f87171; font-size: 13px; margin-bottom: 16px;"></div>
+
+      <form id="facultyAuthForm" onsubmit="handleFacultyAuthSubmit(event)">
+        <div class="form-group">
+          <label>Institutional Employee ID / Faculty Code *</label>
+          <input type="text" id="facultyEmpIdInput" required placeholder="e.g. KIET-FAC-2026 or AKG-STAFF">
+        </div>
+        <div class="form-group">
+          <label>Faculty Security Passcode *</label>
+          <input type="password" id="facultyPasscodeInput" required placeholder="Enter institutional passcode (e.g. FAC2026)">
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Institutional authorization pass key: <code>FAC2026</code></div>
+        </div>
+
+        <div class="modal-footer-actions" style="margin-top: 20px;">
+          <button type="button" class="btn-secondary" onclick="closeFacultySecurityModal()">Cancel & Stay Student</button>
+          <button type="submit" class="btn-primary">Verify & Elevate Access 🛡️</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FACULTY & ORGANIZER EMAIL DISPATCHER MODAL -->
+  <div id="emailComposerModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog email-dialog" style="max-width: 680px;">
+      <button class="modal-close-btn" onclick="closeEmailComposerModal()">✕</button>
+
+      <div class="email-modal-header" style="margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="font-size: 28px;">✉️</div>
+          <div>
+            <h3 class="modal-title">Institutional Email Dispatcher</h3>
+            <p class="modal-subtitle">Official communications sent directly to registered students from your verified campus account.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Verified Sender Banner -->
+      <div class="email-sender-banner">
+        <div class="email-sender-info">
+          <span class="sender-label">From (Logged-In Faculty/Organizer Email):</span>
+          <div class="sender-pill">
+            <span class="sender-dot"></span>
+            <span id="emailComposerSenderDisplay">faculty@kiet.edu (KIET Faculty Coordinator)</span>
+          </div>
+        </div>
+        <div class="sender-note">
+          Emails are dispatched directly to the student's inbox using your authorized campus address.
+        </div>
+      </div>
+
+      <form id="emailComposerForm" onsubmit="handleSendEmailSubmit(event)">
+        <!-- Recipient selection -->
+        <div class="form-row">
+          <div class="form-group" style="flex: 1.4;">
+            <label for="emailRecipientInput">To (Student Email Address) *</label>
+            <input type="email" id="emailRecipientInput" required placeholder="e.g. student@kiet.edu or applicant@akgec.ac.in">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="emailQuickStudentSelect">Pick Registered Student:</label>
+            <select id="emailQuickStudentSelect" onchange="handleSelectAttendeeForEmail(this.value)">
+              <option value="">-- Choose from Roster --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1.2;">
+            <label for="emailEventSelect">Associated Campus Event</label>
+            <select id="emailEventSelect" onchange="handleEmailEventChange(this.value)">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="emailStudentNameInput">Student Attendee Name</label>
+            <input type="text" id="emailStudentNameInput" placeholder="e.g. Parth Goyal">
+          </div>
+        </div>
+
+        <!-- Quick Template Buttons -->
+        <div class="email-templates-wrap">
+          <label class="templates-label">⚡ Quick Message Templates:</label>
+          <div class="email-template-pills">
+            <button type="button" class="template-pill active" id="tmplBtnConfirm" onclick="applyEmailTemplate('confirmation')">🎟️ Pass Confirmation</button>
+            <button type="button" class="template-pill" id="tmplBtnRemind" onclick="applyEmailTemplate('reminder')">⏰ Schedule & Venue Reminder</button>
+            <button type="button" class="template-pill" id="tmplBtnVenue" onclick="applyEmailTemplate('venue')">📍 Lab / Hall Allocation</button>
+            <button type="button" class="template-pill" id="tmplBtnAnnounce" onclick="applyEmailTemplate('announcement')">📢 General Notice</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="emailSubjectInput">Email Subject *</label>
+          <input type="text" id="emailSubjectInput" required placeholder="Official Subject Line">
+        </div>
+
+        <div class="form-group">
+          <label for="emailBodyInput">Email Message Body *</label>
+          <textarea id="emailBodyInput" rows="7" required style="font-family: var(--font-sans); line-height: 1.5; font-size: 13px;"></textarea>
+        </div>
+
+        <!-- Send Actions -->
+        <div class="email-actions-bar">
+          <button type="button" class="btn-secondary" onclick="closeEmailComposerModal()">Cancel</button>
+          <button type="button" class="btn-secondary" onclick="handleSendAndLogInternalEmail(event)" title="Log into telemetry and send real-time notification">
+            ⚡ Send & Log Dispatched Telemetry
+          </button>
+          <button type="submit" class="btn-primary" title="Launch default email client to send from your login email">
+            🚀 Send from Login Email (Open Mail App)
+          </button>
+        </div>
+      </form>
+
+      <!-- Dispatched Emails History Log -->
+      <div class="dispatched-log-wrap" id="dispatchedLogWrap">
+        <div class="dispatched-log-header" onclick="toggleDispatchedLog()">
+          <span style="font-weight: 700; font-size: 13px;">📋 Dispatched Mails Telemetry (<span id="dispatchedLogCount">0</span> Sent)</span>
+          <span id="dispatchedToggleIcon">▼</span>
+        </div>
+        <div class="dispatched-log-body" id="dispatchedLogBody" style="display: none;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE SQUAD POST MODAL -->
+  <div id="createSquadPostModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog squad-dialog" style="max-width: 600px;">
+      <button class="modal-close-btn" onclick="closeCreateSquadModal()">✕</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+        <span style="font-size: 26px;">🤝</span>
+        <h3 class="modal-title" style="margin: 0;">Post Squad / Teammate Request</h3>
+      </div>
+      <p class="modal-subtitle">Find or form your hackathon team across Delhi-NCR campuses with direct WhatsApp and email contact.</p>
+
+      <form id="createSquadForm" onsubmit="handleCreateSquadSubmit(event)">
+        <!-- Post Type Choice -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="font-weight: 700; margin-bottom: 8px; display: block;">Listing Type *</label>
+          <div class="squad-type-selector">
+            <label class="squad-radio-card" id="squadTypeTeamLabel">
+              <input type="radio" name="squadPostType" value="TEAM_SEEKING_MEMBERS" checked onchange="handleSquadTypeRadioChange('TEAM_SEEKING_MEMBERS')">
+              <div class="radio-card-content">
+                <span class="radio-title">👥 Team Looking for Members</span>
+                <span class="radio-desc">We have a team and need specific roles (e.g. UI/UX, ML, Hardware).</span>
+              </div>
+            </label>
+            <label class="squad-radio-card" id="squadTypeSoloLabel">
+              <input type="radio" name="squadPostType" value="INDIVIDUAL_SEEKING_TEAM" onchange="handleSquadTypeRadioChange('INDIVIDUAL_SEEKING_TEAM')">
+              <div class="radio-card-content">
+                <span class="radio-title">👤 Solo Dev Looking for a Team</span>
+                <span class="radio-desc">I am an individual looking to join an ambitious squad.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Target Event -->
+        <div class="form-group">
+          <label for="squadNewEventSelect">Target Hackathon / Competition *</label>
+          <select id="squadNewEventSelect" required>
+            <!-- Populated via JS with active events -->
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label id="squadNameFieldLabel">Team or Project Name *</label>
+            <input type="text" id="squadTeamNameInput" required placeholder="e.g. Team Algorhythm or Solo Fullstack Dev">
+          </div>
+          <div class="form-group">
+            <label id="squadRoleFieldLabel">Role(s) Needed or Offered *</label>
+            <input type="text" id="squadRoleInput" required placeholder="e.g. Need 1 UI/UX Designer & 1 Python Lead">
+          </div>
+        </div>
+
+        <!-- Skills Selection Chips -->
+        <div class="form-group">
+          <label>Tech Stack & Required Skills (Click to toggle) *</label>
+          <div class="squad-skills-chip-group" id="squadSkillChipGroup">
+            <span class="squad-selectable-chip" onclick="toggleSquadChip(this, 'AI/ML')">AI/ML</span>
+            <span class="squad-selectable-chip" onclick="toggleSquadChip(this, 'Web3')">Web3 / Solidity</span>
+            <span class="squad-selectable-chip" onclick="toggleSquadChip(this, 'React')">React / Next.js</span>
+            <span class="squad-selectable-chip" onclick="toggleSquadChip(this, 'Node.js')">Node.js / Express</span>
+            <span class="squad-selectable-chip" onclick="toggleSquadChip(this, 'Python')">Python / FastAPI</span>
+            <span class="squad-selectable-chip" onclick="toggleSquadChip(this, 'Flutter')">Flutter / Mobile</span>
+            <span class="squad-selectable-chip" onclick="toggleSquadChip(this, 'Hardware/IoT')">Hardware / IoT</span>
+            <span class="squad-selectable-chip" onclick="toggleSquadChip(this, 'Embedded Systems')">Embedded Systems</span>
+            <span class="squad-selectable-chip" onclick="toggleSquadChip(this, 'UI/UX Design')">UI/UX Design (Figma)</span>
+            <span class="squad-selectable-chip" onclick="toggleSquadChip(this, 'Pitching')">Pitching / Presenter</span>
+          </div>
+          <input type="text" id="squadCustomSkillsInput" placeholder="Add custom skills separated by commas (e.g. OpenCV, Docker, Rust)" style="margin-top: 8px; font-size: 12px;">
+        </div>
+
+        <!-- Pitch / What are you building -->
+        <div class="form-group">
+          <label for="squadPitchInput">Pitch / Details (Project idea or what you bring to the table) *</label>
+          <textarea id="squadPitchInput" rows="3" required placeholder="Describe your hackathon goals, current progress, or key technical proficiencies..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="squadWhatsAppInput">WhatsApp Contact Number (10 digits) *</label>
+            <input type="tel" id="squadWhatsAppInput" required placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+          </div>
+          <div class="form-group">
+            <label for="squadContactEmailInput">College Email *</label>
+            <input type="email" id="squadContactEmailInput" required placeholder="e.g. student@kiet.edu">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn-secondary" onclick="closeCreateSquadModal()">Cancel</button>
+          <button type="submit" class="btn-primary" style="display: flex; align-items: center; gap: 6px;">
+            <span>🚀</span> Publish Squad Listing
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EVENT SQUAD DRAWER / MODAL -->
+  <div id="eventSquadModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog squad-event-dialog" style="max-width: 660px;">
+      <button class="modal-close-btn" onclick="closeEventSquadModal()">✕</button>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 32px;">🤝</span>
+          <div>
+            <h3 class="modal-title" style="margin: 0;" id="eventSquadModalTitle">Event Squads</h3>
+            <p class="modal-subtitle" style="margin: 0;" id="eventSquadModalSubtitle">Open teammate listings for this hackathon</p>
+          </div>
+        </div>
+        <button class="btn-primary sm" onclick="openCreateSquadModalForCurrentEvent()" style="display: flex; align-items: center; gap: 6px;">
+          <span>➕</span> Post for this Event
+        </button>
+      </div>
+
+      <div id="eventSquadListContainer" style="display: flex; flex-direction: column; gap: 12px; max-height: 480px; overflow-y: auto; padding-right: 4px;">
+        <!-- Populated dynamically via JS -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 18px;">
+        <button class="btn-secondary" onclick="closeEventSquadModal()">Close</button>
+      </div>
+    </div>
+  <!-- CREATE DEAN CIRCULAR MODAL -->
+  <div id="createDeanCircularModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" style="max-width: 620px;">
+      <button class="modal-close-btn" onclick="closeCreateDeanCircularModal()">✕</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+        <span style="font-size: 26px;">🏛️</span>
+        <h3 class="modal-title" style="margin: 0;">Issue Official Academic Circular</h3>
+      </div>
+      <p class="modal-subtitle">Publish an institutional directive, on-duty (OD) approval, lab allocation, or inter-college participation guidelines as Faculty/Dean.</p>
+
+      <form onsubmit="handleCreateDeanCircularSubmit(event)">
+        <div class="form-row">
+          <div class="form-group" style="flex: 1;">
+            <label for="circularPrioritySelect">Priority / Notice Level *</label>
+            <select id="circularPrioritySelect" class="campus-search-input" style="height: 42px;">
+              <option value="urgent">🔴 URGENT / ATTENDANCE EXEMPTION</option>
+              <option value="academic" selected>🔵 ACADEMIC & LAB CIRCULAR</option>
+              <option value="guideline">🟢 CAMPUS PARTICIPATION GUIDELINE</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="circularTargetDept">Target Scope *</label>
+            <select id="circularTargetDept" class="campus-search-input" style="height: 42px;">
+              <option value="All Departments">All Departments (Institute Wide)</option>
+              <option value="CSE & IT Departments">CSE & IT Departments</option>
+              <option value="ECE & Electrical">ECE & Electrical Branches</option>
+              <option value="Mechanical & Mechatronics">Mechanical & Mechatronics</option>
+              <option value="All 6 NCR Partner Campuses">All 6 NCR Partner Campuses</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="circularTitleInput">Circular Subject / Title *</label>
+          <input type="text" id="circularTitleInput" required class="campus-search-input" style="height: 42px;" placeholder="e.g. Mandatory OD Sanction for InnoHacks Hackathon Registrants">
+        </div>
+
+        <div class="form-group">
+          <label for="circularBodyInput">Circular Directives & Body *</label>
+          <textarea id="circularBodyInput" required class="broadcast-textarea" style="min-height: 120px;" placeholder="Specify official regulations, lab allocations, faculty coordinator in-charge, and instructions to students..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="circularSignatoryInput">Authorized Signatory Name & Title *</label>
+          <input type="text" id="circularSignatoryInput" required class="campus-search-input" style="height: 42px;" value="Dr. Manoj Goel, Dean Academics & Student Welfare">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+          <button type="button" class="btn-secondary" onclick="closeCreateDeanCircularModal()">Cancel</button>
+          <button type="submit" class="btn-primary">📜 Publish Official Circular</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EVENT ATTENDEES ROSTER MODAL (For Dean & Organiser) -->
+  <div id="eventAttendeesModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" style="max-width: 860px; max-height: 90vh; overflow-y: auto;">
+      <button class="modal-close-btn" onclick="closeEventAttendeesModal()">✕</button>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h3 class="modal-title" id="eventAttendeesModalTitle" style="margin: 0;">Event Enrolment Roster</h3>
+          <p class="modal-subtitle" id="eventAttendeesModalSubtitle" style="margin-top: 4px;">Live registered students with verified roll numbers and departments.</p>
+        </div>
+        <button class="btn-secondary sm" onclick="exportCurrentEventRosterCsv()">📥 Download Roster (CSV)</button>
+      </div>
+
+      <div class="roster-table-responsive">
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>Registered</th>
+              <th>Student Name</th>
+              <th>College & Branch</th>
+              <th>Roll / Student ID</th>
+              <th>Contact</th>
+              <th>Entry Pass ID</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="eventAttendeesModalTableBody">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 18px;">
+        <button class="btn-secondary" onclick="closeEventAttendeesModal()">Close</button>
+      </div>
+    </div>
+  <!-- STUDENT CIRCULAR READER MODAL (Read-Only Official Notice) -->
+  <div id="studentCircularModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" style="max-width: 620px;">
+      <button class="modal-close-btn" onclick="closeStudentCircularModal()">✕</button>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span style="font-size: 36px;">📜</span>
+        <div>
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent-primary); letter-spacing: 0.5px;">
+            Office of the Dean Academics • Official Circular
+          </div>
+          <h3 class="modal-title" id="studentCircularModalTitle" style="margin: 0; font-size: 18px;">Academic Circular</h3>
+        </div>
+      </div>
+      <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+          <span id="studentCircularModalRef">Ref: KIET/DEAN/ACAD/2026/042</span>
+          <span id="studentCircularModalDate">Date: 18-Feb-2026</span>
+        </div>
+        <div id="studentCircularModalBody" style="line-height: 1.7; font-size: 14px; color: var(--text-primary); white-space: pre-line;">
+          <!-- Filled dynamically by JS -->
+        </div>
+        <div style="margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-primary);" id="studentCircularModalSignatory">Dr. Manoj Goel</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Dean Academics & Student Welfare</div>
+          </div>
+          <span style="font-size: 11px; font-weight: 800; color: #10b981; background: rgba(16,185,129,0.12); padding: 4px 10px; border-radius: 9999px;">✓ Officially Sanctioned</span>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn-primary" onclick="closeStudentCircularModal()">Understood & Acknowledged</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEAN CONFIDENTIAL EXECUTIVE PORTAL SECURITY MODAL -->
+  <div id="deanSecurityModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" style="max-width: 500px;">
+      <button class="modal-close-btn" onclick="closeDeanSecurityModal()">✕</button>
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 44px; margin-bottom: 6px;">🏛️</div>
+        <div class="dean-badge-pill" style="display: inline-flex; margin-bottom: 8px; font-size: 11px;">
+          <span>🔒 RESTRICTED ACADEMIC PORTAL</span>
+        </div>
+        <h3 class="modal-title" style="margin-bottom: 6px;">Office of the Dean Authentication</h3>
+        <p class="modal-subtitle" style="font-size: 13px;">
+          The Institutional Dean Portal is strictly confidential. Only authorized Dean and Academic Directorate credentials can access institutional event audits, Recharts longitudinal telemetry, and campus-wide circular management.
+        </p>
+      </div>
+
+      <div id="deanAuthError" style="display: none; padding: 10px 14px; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: var(--radius-sm); color: #f87171; font-size: 13px; margin-bottom: 16px;"></div>
+
+      <form id="deanAuthForm" onsubmit="handleDeanSecurityAuthSubmit(event)">
+        <div class="form-group">
+          <label>Campus / Institution *</label>
+          <select id="deanAuthCampusSelect" class="campus-search-input" style="height: 42px;">
+            <option value="kiet">KIET Group of Institutions (Deemed University)</option>
+            <option value="akgec">Ajay Kumar Garg Engineering College (AKGEC)</option>
+            <option value="abes">ABES Engineering College</option>
+            <option value="galgotias">Galgotias University</option>
+            <option value="glbajaj">GL Bajaj Institute of Technology</option>
+            <option value="jssate">JSS Academy of Technical Education</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Dean Full Name *</label>
+          <input type="text" id="deanNameInput" required placeholder="e.g. Dr. Manoj Goel (Dean Academics)" value="Dr. Manoj Goel (Dean Academics)">
+        </div>
+        <div class="form-group">
+          <label>Dean Institutional Employee ID *</label>
+          <input type="text" id="deanEmpIdInput" required placeholder="e.g. KIET-FAC-DEAN-1042" value="KIET-FAC-DEAN-1042">
+        </div>
+        <div class="form-group">
+          <label>Confidential Dean Access Passcode *</label>
+          <input type="password" id="deanPasscodeInput" required placeholder="Enter Dean Passcode (e.g. DEAN2026)">
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Institutional authorization pass key: <code>DEAN2026</code></div>
+        </div>
+
+        <div class="modal-footer-actions" style="margin-top: 20px;">
+          <button type="button" class="btn-secondary" onclick="closeDeanSecurityModal()">Cancel & Stay on Page</button>
+          <button type="submit" class="btn-primary">Verify & Enter Dean Portal 🏛️</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- LIVE PROJECT TEAM ROSTER & CODE REPOSITORY MODAL -->
+  <div id="projectTeamModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" style="max-width: 820px; max-height: 90vh; overflow-y: auto;">
+      <button class="modal-close-btn" onclick="closeProjectTeamModal()">✕</button>
+      
+      <div id="projectTeamModalContent">
+        <!-- Rendered dynamically via JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- SITE FOOTER -->
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <div class="footer-left">
+        <div class="brand-group">
+          <div class="brand-logo sm">
+            <img src="logo.png" alt="EvenTrix Logo" class="brand-logo-img">
+          </div>
+          <div class="brand-name">EvenTrix</div>
+        </div>
+        <p class="footer-tagline">
+          The unified multi-campus opportunities, project exhibition & event discovery ecosystem.
+          Connecting student talent with hackathons, fests, real-time innovations, and campus organizers across Delhi-NCR.
+        </p>
+        <div class="footer-vortex">Engineered by <strong>Team VORTEX</strong> • All Campus Rights Reserved © 2026</div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Explore</h4>
+          <a onclick="showTab('explore')">All Events</a>
+          <a onclick="showTab('projects')">Real-Time Projects</a>
+          <a onclick="setExploreViewMode('calendar'); showTab('explore')">Monthly Event Calendar</a>
+          <a onclick="setCategory('Tech'); showTab('explore')">Hackathons & Tech</a>
+          <a onclick="setCategory('Cultural'); showTab('explore')">Cultural Festivals</a>
+        </div>
+        <div class="footer-col">
+          <h4>Partner Campuses</h4>
+          <a onclick="showTab('colleges')" style="color: var(--accent-primary); font-weight: 700;">🏛️ All Campuses Directory</a>
+          <a onclick="handleCollegeFilter('akgec'); showTab('explore')">AKGEC Ghaziabad</a>
+          <a onclick="handleCollegeFilter('kiet'); showTab('explore')">KIET Deemed University</a>
+          <a onclick="handleCollegeFilter('abes'); showTab('explore')">ABES Engg. College</a>
+          <a onclick="handleCollegeFilter('galgotias'); showTab('explore')">Galgotias University</a>
+          <a onclick="handleCollegeFilter('glbajaj'); showTab('explore')">GL Bajaj Gr. Noida</a>
+          <a onclick="handleCollegeFilter('jssate'); showTab('explore')">JSSATE Noida</a>
+        </div>
+        <div class="footer-col">
+          <h4>Organizers & Faculty</h4>
+          <a onclick="handleOrganizerTabClick()">Live Applicant Telemetry</a>
+          <a onclick="openPublishModal()">Host New Event</a>
+          <a onclick="openScannerModal()">Gate Entry Scanner</a>
+          <a onclick="exportAttendeeCsv()">Export Attendee CSV</a>
+          <a onclick="showTab('passes')">My Registered Passes</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile Bottom Navigation Bar (Responsive for phones & compact viewports) -->
+  <nav class="mobile-bottom-nav">
+    <button class="mobile-nav-item active" onclick="showTab('explore')" id="m-nav-explore">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <span>Explore</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showTab('squads')" id="m-nav-squads">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      <span>Squads</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showTab('colleges')" id="m-nav-colleges">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+      <span>Campuses</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showTab('projects')" id="m-nav-projects">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+      <span>Projects</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showTab('passes')" id="m-nav-passes">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+      <span>Passes <span id="mPassCounterBadge" class="m-badge">0</span></span>
+    </button>
+    <button class="mobile-nav-item" onclick="handleOrganizerTabClick()" id="m-nav-organizer">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+      <span>Organizer</span>
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>

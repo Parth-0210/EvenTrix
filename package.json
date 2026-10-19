@@ -1,0 +1,13 @@
+{
+  "name": "eventrix-website",
+  "version": "1.0.0",
+  "description": "EvenTrix - Multi-College Campus Event Network Standalone Website",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["campus", "events", "delhi-ncr", "college", "hackathons"],
+  "author": "Team VORTEX",
+  "license": "MIT"
+}
