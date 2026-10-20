@@ -1155,7 +1155,15 @@ const SEED_SQUAD_POSTS = [
 ];
 
 // App State
-let allEvents = [...SEED_EVENTS];
+let allEvents = JSON.parse(localStorage.getItem("eventrix_all_events") || "null") || [...SEED_EVENTS];
+function saveEvents(events) {
+  try {
+    localStorage.setItem("eventrix_all_events", JSON.stringify(events));
+  } catch (err) {
+    console.warn("Could not save events:", err);
+  }
+}
+window.saveEvents = saveEvents;
 let allProjects = [...SEED_PROJECTS];
 let squadPosts = JSON.parse(localStorage.getItem("eventrix_squad_posts") || "null") || [...SEED_SQUAD_POSTS];
 let currentSquadSearch = "";
@@ -2425,6 +2433,12 @@ function updateNavigationRibbonForRole(role) {
       </button>
     `;
   }
+
+  // Toggle mobile bottom nav Dean button - only visible for Dean role
+  const mNavDean = document.getElementById("m-nav-dean");
+  if (mNavDean) {
+    mNavDean.style.display = (role === "dean") ? "flex" : "none";
+  }
 }
 
 // Apply User Profile to Header & Feed Personalization
@@ -2555,8 +2569,79 @@ function handleFacultyAuthSubmit(e) {
   }
 }
 
+// Security Gate for Institutional Dean Portal
+function handleDeanTabClick() {
+  const user = getUserProfile();
+  if (!user || user.role !== "dean") {
+    openDeanSecurityModal();
+  } else {
+    showTab("dean");
+  }
+}
+
+function openDeanSecurityModal() {
+  const modal = document.getElementById("deanSecurityModal");
+  const errBox = document.getElementById("deanAuthError");
+  if (errBox) errBox.style.display = "none";
+  const passInput = document.getElementById("deanPasscodeInput");
+  if (passInput) passInput.value = "DEAN2026";
+  const nameInput = document.getElementById("deanNameInput");
+  if (nameInput && !nameInput.value) nameInput.value = "Dr. Manoj Goel (Dean Academics)";
+  const empInput = document.getElementById("deanEmpIdInput");
+  if (empInput && !empInput.value) empInput.value = "KIET-FAC-DEAN-1042";
+  if (modal) modal.style.display = "flex";
+}
+
+function closeDeanSecurityModal() {
+  const modal = document.getElementById("deanSecurityModal");
+  if (modal) modal.style.display = "none";
+}
+
+function handleDeanSecurityAuthSubmit(e) {
+  e.preventDefault();
+  const campus = document.getElementById("deanAuthCampusSelect").value;
+  const name = document.getElementById("deanNameInput").value.trim();
+  const empId = document.getElementById("deanEmpIdInput").value.trim();
+  const pass = document.getElementById("deanPasscodeInput").value.trim();
+  const errBox = document.getElementById("deanAuthError");
+
+  if (pass === "DEAN2026" || pass === "FAC2026" || pass.toLowerCase().includes("dean") || pass === "admin123") {
+    const user = {
+      name: name || "Dr. Manoj Goel (Dean Academics)",
+      email: "dean.academics@kiet.edu",
+      role: "dean",
+      institutionId: campus || "kiet",
+      deanEmpId: empId || "KIET-FAC-DEAN-1042",
+      deanVerified: true
+    };
+    saveUserProfile(user);
+    applyUserProfile(user);
+    closeDeanSecurityModal();
+    showToast(`🏛️ Verified! Welcome ${user.name}. Access granted to Dean Portal.`);
+    showTab("dean");
+  } else {
+    if (errBox) {
+      errBox.textContent = "❌ Authorization Failed: Invalid Dean access passcode. Institutional key is 'DEAN2026'.";
+      errBox.style.display = "block";
+    }
+    showToast("Invalid Dean passcode. Access denied.", "error");
+  }
+}
+window.handleDeanTabClick = handleDeanTabClick;
+window.openDeanSecurityModal = openDeanSecurityModal;
+window.closeDeanSecurityModal = closeDeanSecurityModal;
+window.handleDeanSecurityAuthSubmit = handleDeanSecurityAuthSubmit;
+
 // Tab Switching
 function showTab(tabId) {
+  if (tabId === "dean") {
+    const user = getUserProfile();
+    if (!user || user.role !== "dean") {
+      openDeanSecurityModal();
+      return;
+    }
+  }
+
   document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
   document.querySelectorAll(".nav-link").forEach(el => el.classList.remove("active"));
   document.querySelectorAll(".mobile-nav-item").forEach(el => el.classList.remove("active"));
@@ -3943,6 +4028,89 @@ function clearNotifications() {
   showToast("Real-time notification stream cleared");
 }
 
+// Interactive Real-Time Applicant Simulator (Organizer Telemetry)
+function simulateLiveApplicantArrival() {
+  const sampleStudents = [
+    { name: "Priyanshu Tyagi", college: "kiet", branch: "Computer Science & Engineering (CSE)", roll: "2200290100142", year: "3rd Year" },
+    { name: "Ananya Sharma", college: "akgec", branch: "Information Technology (IT)", roll: "2200270130089", year: "3rd Year" },
+    { name: "Rohan Verma", college: "abes", branch: "Electronics & Communication Engineering (ECE)", roll: "2300320200054", year: "2nd Year" },
+    { name: "Sneha Patel", college: "galgotias", branch: "CSE (Artificial Intelligence & Machine Learning)", roll: "2100450100201", year: "4th Year" },
+    { name: "Aarav Gupta", college: "glbajaj", branch: "Computer Science (CS)", roll: "2200540100115", year: "3rd Year" },
+    { name: "Ishaan Malhotra", college: "jssate", branch: "CSE (Data Science)", roll: "2300910100067", year: "2nd Year" },
+    { name: "Tanvi Saxena", college: "kiet", branch: "CSE (Artificial Intelligence)", roll: "2200290100234", year: "3rd Year" },
+    { name: "Kunal Kashyap", college: "akgec", branch: "Computer Science & Information Technology (CSIT)", roll: "2200270130120", year: "3rd Year" },
+    { name: "Devansh Mehra", college: "abes", branch: "CSE (Cyber Security)", roll: "2300320100045", year: "2nd Year" },
+    { name: "Nidhi Agrawal", college: "galgotias", branch: "ECE (VLSI Design & Technology) — Specialized microelectronics track", roll: "2200450200078", year: "3rd Year" },
+    { name: "Yashvardhan Singh", college: "glbajaj", branch: "Electrical & Computer Engineering (ELCE)", roll: "2300540250033", year: "2nd Year" },
+    { name: "Aditya Bhatt", college: "kiet", branch: "Advanced Mechatronics & Industrial Automation (AMIA)", roll: "2200290400019", year: "3rd Year" },
+    { name: "Vikas Chauhan", college: "akgec", branch: "Mechanical Engineering (ME)", roll: "2100270400055", year: "4th Year" },
+    { name: "Simran Kaur", college: "jssate", branch: "Electrical & Electronics Engineering (EEE)", roll: "2200910210042", year: "3rd Year" }
+  ];
+
+  const randomStudent = sampleStudents[Math.floor(Math.random() * sampleStudents.length)];
+  const randomEvent = allEvents[Math.floor(Math.random() * allEvents.length)];
+
+  if (!randomEvent) {
+    showToast("No active events found to register.", "error");
+    return;
+  }
+
+  // Decrement remaining seats if available
+  if (randomEvent.remainingSeats > 0) {
+    randomEvent.remainingSeats -= 1;
+    saveEvents(allEvents);
+  }
+
+  const timestampStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const passId = "ETX-" + Math.floor(100000 + Math.random() * 900000);
+
+  const newPass = {
+    passId: passId,
+    eventId: randomEvent.id,
+    eventTitle: randomEvent.title,
+    eventTime: randomEvent.dateTime,
+    location: randomEvent.location,
+    institutionId: randomEvent.institutionId,
+    registeredAt: timestampStr,
+    attendeeName: randomStudent.name,
+    attendeeRollNo: randomStudent.roll,
+    attendeeEmail: `${randomStudent.name.toLowerCase().replace(/\s+/g, '.')}${Math.floor(Math.random()*90 + 10)}@${randomStudent.college}.edu`,
+    attendeePhone: "+91 98" + Math.floor(10000000 + Math.random() * 90000000),
+    attendeeCollege: randomStudent.college,
+    attendeeBranch: randomStudent.branch,
+    attendeeYear: randomStudent.year,
+    participationType: Math.random() > 0.5 ? "Team (Lead)" : "Solo Participant",
+    specialRequests: "Simulated Live Telemetry Applicant",
+    status: "CONFIRMED_ACTIVE"
+  };
+
+  registeredPasses.unshift(newPass);
+  saveRegistrations(registeredPasses);
+
+  liveNotifications.unshift({
+    id: "notif-" + Date.now(),
+    title: `${randomStudent.name} (${randomStudent.college.toUpperCase()}) registered for "${randomEvent.title}"`,
+    timeStr: "Just now",
+    timestamp: Date.now(),
+    type: "registration",
+    eventId: randomEvent.id,
+    attendeeData: newPass
+  });
+
+  renderNotificationsList();
+  updateBadgeCounts();
+  renderFeed();
+  renderCalendar();
+  renderPasses();
+  renderOrganizerDashboard();
+  if (typeof renderDeanDashboard === "function") {
+    renderDeanDashboard();
+  }
+
+  showToast(`⚡ Real-Time Telemetry: ${randomStudent.name} (${randomStudent.college.toUpperCase()}) joined "${randomEvent.title}" at ${timestampStr}!`);
+}
+window.simulateLiveApplicantArrival = simulateLiveApplicantArrival;
+
 // Render Organizer Hub & Comprehensive Attendee Table (Who Registered & When)
 function renderOrganizerDashboard() {
   const container = document.getElementById("managedEventsList");
@@ -4190,6 +4358,39 @@ function scrollToOrgSection(secId) {
 // Attendance Velocity Trends & Departmental Participation
 // ========================================================
 let currentRechartsTimeframe = "6m";
+let currentDeptCluster = "all";
+
+// All 14 B.Tech Departments with cluster categories
+const ALL_DEPT_PARTICIPATION_DATA = [
+  { dept: "CSE", fullName: "Computer Science & Engineering (CSE)", cluster: "cs", fallRate: 78.4, springRate: 88.6, totalStudents: 680 },
+  { dept: "CS", fullName: "Computer Science (CS)", cluster: "cs", fallRate: 72.0, springRate: 84.5, totalStudents: 410 },
+  { dept: "IT", fullName: "Information Technology (IT)", cluster: "cs", fallRate: 66.2, springRate: 77.5, totalStudents: 420 },
+  { dept: "CSIT", fullName: "Computer Science & Information Technology (CSIT)", cluster: "cs", fallRate: 69.5, springRate: 81.0, totalStudents: 340 },
+  { dept: "CSE(AI)", fullName: "CSE (Artificial Intelligence)", cluster: "cs", fallRate: 76.8, springRate: 92.4, totalStudents: 460 },
+  { dept: "CSE(AIML)", fullName: "CSE (Artificial Intelligence & Machine Learning)", cluster: "cs", fallRate: 74.0, springRate: 91.2, totalStudents: 490 },
+  { dept: "CSE(DS)", fullName: "CSE (Data Science)", cluster: "cs", fallRate: 70.5, springRate: 85.0, totalStudents: 360 },
+  { dept: "CSE(Cyber)", fullName: "CSE (Cyber Security)", cluster: "cs", fallRate: 68.0, springRate: 82.0, totalStudents: 310 },
+  { dept: "ECE", fullName: "Electronics & Communication Engineering (ECE)", cluster: "ece", fallRate: 54.5, springRate: 64.0, totalStudents: 310 },
+  { dept: "ECE(VLSI)", fullName: "ECE (VLSI Design & Technology) — Specialized microelectronics track", cluster: "ece", fallRate: 48.0, springRate: 60.5, totalStudents: 180 },
+  { dept: "EEE", fullName: "Electrical & Electronics Engineering (EEE)", cluster: "ece", fallRate: 36.2, springRate: 44.5, totalStudents: 150 },
+  { dept: "ELCE", fullName: "Electrical & Computer Engineering (ELCE)", cluster: "ece", fallRate: 50.5, springRate: 62.0, totalStudents: 165 },
+  { dept: "ME", fullName: "Mechanical Engineering (ME)", cluster: "mech", fallRate: 39.0, springRate: 47.8, totalStudents: 195 },
+  { dept: "AMIA", fullName: "Advanced Mechatronics & Industrial Automation (AMIA)", cluster: "mech", fallRate: 46.5, springRate: 58.0, totalStudents: 210 }
+];
+
+function setRechartsDeptCluster(cluster) {
+  currentDeptCluster = cluster;
+  document.querySelectorAll(".recharts-dept-cluster-pills .pill").forEach(p => p.classList.remove("active"));
+  const btn = document.getElementById(`deptClusterBtn-${cluster}`);
+  if (btn) btn.classList.add("active");
+
+  let filtered = ALL_DEPT_PARTICIPATION_DATA;
+  if (cluster !== "all") {
+    filtered = ALL_DEPT_PARTICIPATION_DATA.filter(d => d.cluster === cluster);
+  }
+  renderRechartsDeptChart("rechartsDeptContainer", filtered);
+}
+window.setRechartsDeptCluster = setRechartsDeptCluster;
 
 function setRechartsTimeframe(tf) {
   currentRechartsTimeframe = tf;
@@ -4198,6 +4399,7 @@ function setRechartsTimeframe(tf) {
   if (activeBtn) activeBtn.classList.add("active");
   renderDeanRechartsDashboard(tf);
 }
+window.setRechartsTimeframe = setRechartsTimeframe;
 
 function scrollToDeanSection(secId) {
   setTimeout(() => {
@@ -4205,6 +4407,7 @@ function scrollToDeanSection(secId) {
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 100);
 }
+window.scrollToDeanSection = scrollToDeanSection;
 
 function renderDeanRechartsDashboard(timeframe = currentRechartsTimeframe) {
   // 1. Longitudinal Event Attendance Velocity Data
@@ -4239,19 +4442,7 @@ function renderDeanRechartsDashboard(timeframe = currentRechartsTimeframe) {
     ];
   }
 
-  // 2. Departmental Participation Rates Over Time
-  const deptParticipationData = [
-    { dept: "CSE", fallRate: 78.4, springRate: 88.6, totalStudents: 680 },
-    { dept: "IT", fallRate: 66.2, springRate: 77.5, totalStudents: 420 },
-    { dept: "AIML", fallRate: 74.0, springRate: 91.2, totalStudents: 490 },
-    { dept: "ECE", fallRate: 54.5, springRate: 64.0, totalStudents: 310 },
-    { dept: "ME", fallRate: 39.0, springRate: 47.8, totalStudents: 195 },
-    { dept: "EEE", fallRate: 36.2, springRate: 44.5, totalStudents: 150 },
-    { dept: "MBA", fallRate: 61.0, springRate: 71.5, totalStudents: 230 },
-    { dept: "Civil", fallRate: 29.5, springRate: 37.0, totalStudents: 105 }
-  ];
-
-  // 3. Cross-Campus Turnout & Delegation Share
+  // 2. Cross-Campus Turnout & Delegation Share
   const campusMobilityData = [
     { campus: "KIET Ghaziabad", hostAttendees: 68, guestDelegates: 32 },
     { campus: "AKGEC Ghaziabad", hostAttendees: 64, guestDelegates: 36 },
@@ -4262,7 +4453,11 @@ function renderDeanRechartsDashboard(timeframe = currentRechartsTimeframe) {
   ];
 
   renderRechartsAttendanceChart("rechartsAttendanceContainer", attendanceData);
-  renderRechartsDeptChart("rechartsDeptContainer", deptParticipationData);
+  let initialFilteredDept = ALL_DEPT_PARTICIPATION_DATA;
+  if (currentDeptCluster !== "all") {
+    initialFilteredDept = ALL_DEPT_PARTICIPATION_DATA.filter(d => d.cluster === currentDeptCluster);
+  }
+  renderRechartsDeptChart("rechartsDeptContainer", initialFilteredDept);
   renderRechartsCampusChart("rechartsCampusContainer", campusMobilityData);
 }
 
@@ -4587,16 +4782,51 @@ function deleteDeanCircular(id) {
   renderDeanCirculars();
   showToast("Circular archived from official notice board.");
 }
+window.deleteDeanCircular = deleteDeanCircular;
+
+function openStudentCircularModal(circId) {
+  const modal = document.getElementById("studentCircularModal");
+  if (!modal) return;
+
+  const circ = (circId && deanCirculars.find(c => c.id === circId)) || (deanCirculars && deanCirculars[0]);
+  if (!circ) {
+    showToast("No official circulars published currently.");
+    return;
+  }
+
+  const titleEl = document.getElementById("studentCircularModalTitle");
+  const refEl = document.getElementById("studentCircularModalRef");
+  const dateEl = document.getElementById("studentCircularModalDate");
+  const bodyEl = document.getElementById("studentCircularModalBody");
+  const signEl = document.getElementById("studentCircularModalSignatory");
+
+  if (titleEl) titleEl.textContent = circ.title;
+  if (refEl) refEl.textContent = `Ref: ${circ.circularNo}`;
+  if (dateEl) dateEl.textContent = `Date: ${circ.date}`;
+  if (bodyEl) bodyEl.textContent = circ.body;
+  if (signEl) signEl.textContent = circ.signatory;
+
+  modal.style.display = "flex";
+}
+window.openStudentCircularModal = openStudentCircularModal;
+
+function closeStudentCircularModal() {
+  const modal = document.getElementById("studentCircularModal");
+  if (modal) modal.style.display = "none";
+}
+window.closeStudentCircularModal = closeStudentCircularModal;
 
 function openCreateDeanCircularModal() {
   const modal = document.getElementById("createDeanCircularModal");
   if (modal) modal.style.display = "flex";
 }
+window.openCreateDeanCircularModal = openCreateDeanCircularModal;
 
 function closeCreateDeanCircularModal() {
   const modal = document.getElementById("createDeanCircularModal");
   if (modal) modal.style.display = "none";
 }
+window.closeCreateDeanCircularModal = closeCreateDeanCircularModal;
 
 function handleCreateDeanCircularSubmit(e) {
   e.preventDefault();
@@ -4707,7 +4937,7 @@ function renderDeanEventTrackingTable(campusFilter = "ALL") {
             <button class="btn-primary sm" style="font-size: 11.5px; padding: 4px 10px;" onclick="openEventAttendeesModal('${ev.id}')">
               📋 Roster (${eventPasses.length})
             </button>
-            <button class="btn-secondary sm" style="font-size: 11px; padding: 4px 8px;" onclick="showToast('Academic clearance verified for ${ev.title}')" title="Verify compliance">
+            <button class="btn-secondary sm" style="font-size: 11px; padding: 4px 8px;" onclick="verifyDeanEventCompliance('${ev.id}')" title="Verify compliance">
               ✓ Clear
             </button>
           </div>
@@ -4717,17 +4947,31 @@ function renderDeanEventTrackingTable(campusFilter = "ALL") {
   }).join("");
 }
 
+function verifyDeanEventCompliance(eventId) {
+  const ev = allEvents.find(e => e.id === eventId);
+  const title = ev ? ev.title : "Event";
+  showToast(`✓ Academic clearance & On-Duty status verified for ${title}!`);
+}
+
 function renderDeanDepartmentAnalytics() {
   const container = document.getElementById("deanDeptAnalyticsGrid");
   if (!container) return;
 
   const depts = [
-    { name: "Computer Science & Engineering (CSE)", count: 580, pct: 92 },
-    { name: "Information Technology (IT)", count: 395, pct: 78 },
-    { name: "Electronics & Communication (ECE)", count: 285, pct: 64 },
-    { name: "Artificial Intelligence & Data Science", count: 240, pct: 86 },
-    { name: "Mechanical & Automation Engineering", count: 180, pct: 52 },
-    { name: "Applied Sciences & Management", count: 140, pct: 45 }
+    { name: "Computer Science & Engineering (CSE)", count: 680, pct: 94 },
+    { name: "Computer Science (CS)", count: 410, pct: 86 },
+    { name: "Information Technology (IT)", count: 420, pct: 82 },
+    { name: "Computer Science & Information Technology (CSIT)", count: 340, pct: 79 },
+    { name: "CSE (Artificial Intelligence)", count: 460, pct: 93 },
+    { name: "CSE (Artificial Intelligence & Machine Learning)", count: 490, pct: 95 },
+    { name: "CSE (Data Science)", count: 360, pct: 88 },
+    { name: "CSE (Cyber Security)", count: 310, pct: 84 },
+    { name: "Electronics & Communication Engineering (ECE)", count: 310, pct: 68 },
+    { name: "ECE (VLSI Design & Technology)", count: 180, pct: 62 },
+    { name: "Electrical & Electronics Engineering (EEE)", count: 150, pct: 54 },
+    { name: "Electrical & Computer Engineering (ELCE)", count: 165, pct: 64 },
+    { name: "Mechanical Engineering (ME)", count: 195, pct: 51 },
+    { name: "Advanced Mechatronics & Industrial Automation (AMIA)", count: 210, pct: 65 }
   ];
 
   container.innerHTML = depts.map(d => `
@@ -4806,13 +5050,17 @@ function exportCurrentEventRosterCsv() {
     csv += `"${p.passId}","${p.attendeeName}","${p.attendeeCollege}","${p.attendeeBranch}","${p.attendeeYear}","${p.attendeeRollNo}","${p.attendeeEmail}","${p.attendeePhone}","${p.eventTitle}","${p.registeredAt}","${p.status}"\n`;
   });
 
-  const blob = new Blob([csv], { type: "text/csv" });
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = `eventrix_roster_${Date.now()}.csv`;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
   showToast("📥 Attendee roster exported as CSV!");
 }
 
@@ -4823,19 +5071,42 @@ function exportDeanComplianceCsv() {
     csv += `"${ev.id}","${ev.title}","${ev.host}","${ev.institutionId}","${ev.dateTime}","${ev.totalSeats}","${booked}","CSE/IT","Approved by Dean"\n`;
   });
 
-  const blob = new Blob([csv], { type: "text/csv" });
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = `eventrix_dean_compliance_${Date.now()}.csv`;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
   showToast("📥 Dean compliance tracking matrix exported as CSV!");
 }
 
 function openDeanAuditSummaryModal() {
-  showToast("📊 Academic Compliance Audit: 100% of fests and hackathons cleared by Office of the Dean.");
+  const modal = document.getElementById("deanAuditSummaryModal");
+  const countEl = document.getElementById("auditTrackedEvents");
+  const studEl = document.getElementById("auditTotalStudents");
+  if (countEl) countEl.textContent = allEvents.length;
+  const totalBooked = allEvents.reduce((acc, ev) => acc + (ev.totalSeats - ev.remainingSeats), 0);
+  if (studEl) studEl.textContent = `${totalBooked.toLocaleString()}+`;
+  if (modal) modal.style.display = "flex";
 }
+
+function closeDeanAuditSummaryModal() {
+  const modal = document.getElementById("deanAuditSummaryModal");
+  if (modal) modal.style.display = "none";
+}
+window.openEventAttendeesModal = openEventAttendeesModal;
+window.closeEventAttendeesModal = closeEventAttendeesModal;
+window.exportCurrentEventRosterCsv = exportCurrentEventRosterCsv;
+window.exportDeanComplianceCsv = exportDeanComplianceCsv;
+window.openDeanAuditSummaryModal = openDeanAuditSummaryModal;
+window.closeDeanAuditSummaryModal = closeDeanAuditSummaryModal;
+window.verifyDeanEventCompliance = verifyDeanEventCompliance;
+window.renderDeanEventTrackingTable = renderDeanEventTrackingTable;
 
 function scrollToDeanSection(secId) {
   const el = document.getElementById(secId);
