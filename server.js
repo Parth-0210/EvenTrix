@@ -45,7 +45,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n==================================================`);
   console.log(`🚀 EvenTrix Website is LIVE!`);
   console.log(`🌐 Open in your browser: http://localhost:${PORT}`);
